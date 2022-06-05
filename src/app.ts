@@ -1,14 +1,47 @@
+import "dotenv/config";
 import cors from "cors";
 import morgan from "morgan";
-import express, { Express, Request, Response } from "express";
+import express, { Application } from "express";
 
-const app: Express = express();
+import { connect } from "./config/database";
+import userRoutes from "./routes/user.controller";
 
-app.set("port", process.env.PORT || 4000);
+export class App {
+  private app: Application;
+  private port!: string;
+  private rootPath: string = "/api/v1";
+  private apiPaths = { users: `${this.rootPath}/users` };
 
-app.use(cors());
-app.use(morgan("dev"));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+  constructor() {
+    this.app = express();
+    this.port = process.env.PORT || "8000";
+  }
 
-export default app;
+  start() {
+    this.connect();
+    this.listen();
+    this.middlewares();
+    this.routes();
+  }
+
+  listen() {
+    this.app.listen(this.port, () => {
+      console.log("Server listening on port", this.port);
+    });
+  }
+
+  middlewares() {
+    this.app.use(cors());
+    this.app.use(morgan("dev"));
+    this.app.use(express.json());
+    this.app.use(express.urlencoded({ extended: false }));
+  }
+
+  routes() {
+    this.app.use(this.apiPaths.users, userRoutes);
+  }
+
+  private async connect() {
+    await connect();
+  }
+}
